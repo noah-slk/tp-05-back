@@ -4,8 +4,10 @@ const fetch = require('cross-fetch');
 
 // Initialize the Express app
 const app = express();
+const cors = require('cors');
+app.use(cors());
 
-// Initialize Apollo Client to connect to SWAPI GraphQL endpoint
+// Apollo Client to connect to SWAPI GraphQL API
 const client = new ApolloClient({
     link: new HttpLink({
         uri: 'https://swapi-graphql.netlify.app/.netlify/functions/index',
@@ -14,39 +16,34 @@ const client = new ApolloClient({
     cache: new InMemoryCache(),
 });
 
-// GraphQL Query to fetch Star Wars data (e.g., get a specific film by its ID)
-const GET_FILM_QUERY = gql`
-  query GetFilm($id: ID!) {
-    film(filmID: $id) {
-      title
-      releaseDate
-      director
-      producers
-      openingCrawl
+// GraphQL Query to fetch all Star Wars films
+const GET_ALL_FILMS = gql`
+  query GetAllFilms {
+    allFilms {
+      films {
+        title
+        releaseDate
+        director
+        openingCrawl
+      }
     }
   }
 `;
 
-// Define a route to fetch Star Wars film data
-app.get('/film/:id', async (req, res) => {
-    const filmID = req.params.id;
-
+// Route to get all Star Wars films
+app.get('/films', async (req, res) => {
     try {
-        // Send query to SWAPI GraphQL API
         const response = await client.query({
-            query: GET_FILM_QUERY,
-            variables: { id: filmID },
+            query: GET_ALL_FILMS,
         });
-
-        // Send the data back to the client
-        res.json(response.data.film);
+        res.json(response.data.allFilms.films);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ error: 'Failed to fetch data from SWAPI GraphQL' });
+        res.status(500).json({ error: 'Failed to fetch films' });
     }
 });
 
-// Start the Express server
+// Start the server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
